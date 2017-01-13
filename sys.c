@@ -27,7 +27,7 @@ void guardRegister(){
 	init(&user);
 	system("clear");
 	printf("\nUsername : ");scanf("%s",user.name);
-	printf("Indentity Number : ");scanf("%s",user.identityNumber);
+	printf("Identity Number : ");scanf("%s",user.identityNumber);
 	printf("Password : ");scanf("%s",user.password);
 	
 	if(realloc(database,(dataBaseSize+1)*sizeof(userData))){
@@ -42,10 +42,13 @@ void guardRegister(){
 }
 
 int adminPage(){
+	int a;
 	system("clear");
 	printf("NO DATA HERE!\n");
 	printf("Press 2 to LogOut!\n");
-	if(getc() == '2') return 1;
+	scanf("%d",&a);
+	if(a == 2) return 1;
+	return 0;
 }
 
 void adminLogin(){
@@ -87,6 +90,7 @@ void run(){
 		printf("1. Security Guard Login\n");
 		printf("2. Security Guard Register\n");
 		printf("3. Admin Login\n");
+		printf("4. Exit\n");
 		scanf("%d",&option);
 		switch(option){
 			case 1 :
@@ -98,6 +102,8 @@ void run(){
 			case 3 : 
 				adminLogin();	
 				break;	
+			case 4 :
+				exit(0);
 			}
 	}
 	return;	
