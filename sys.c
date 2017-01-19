@@ -11,9 +11,9 @@
 ///// DATATYPE /////
 
 typedef struct{
-	char* name;
-	char* identityNumber;
-	char* password;
+	char name[20];
+	char identityNumber[20];
+	char password[20];
 	int onLeave;
 	int onOverDuty;
 	int noOfLeaves;
@@ -31,7 +31,7 @@ int noOfLeaveRequests = 0;
 int noOfOverDutyRequests = 0;
 char** leaveRequest;
 char** overDutyRequest;
-char* dutyDiagram[7][3][NOOFPLACES];
+char dutyDiagram[7][3][NOOFPLACES][20];
 char* days[7] = {"Monday" , "Tuesday" , "Wednesday" , "Thursday" , "Friday" , "Saturday" , "Sunday" };
 
 ///// UTILITY FUNCTION //////
@@ -49,24 +49,79 @@ int guardInnerPage(int a,userData* user);
 
 ///// ADMIN FUNCTOINS /////
 
+void createAdmin();
 int adminPage();
 void adminLogin();
 int adminInnerPage();
 void generateSchedule();
 
-/// RUN ////
+/// RUN && LOAD ////
+
+void load(){
+	userData user;init(&user);
+	char* input = (char*) malloc(sizeof(char)*20);
+	FILE* lea;
+	FILE* over;
+	FILE* ptr;
+	FILE* timetable;
+	lea = fopen("leaves.bin","rb");
+	ptr = fopen("data.bin","rb");
+	over = fopen("overduty.bin","rb");
+	timetable = fopen("schedule.bin","rb");
+	if(lea == NULL){
+		lea = fopen("leaves.bin","wb");
+		fclose(lea);
+		lea = fopen("leaves.bin","rb");
+	}
+	if(over == NULL){
+		over = fopen("overduty.bin","wb");
+		fclose(over);
+		over = fopen("overduty.bin","rb");
+	}
+	if(timetable == NULL){
+		timetable = fopen("schedule.bin","wb");
+		fclose(timetable);
+		timetable = fopen("schedule.bin","rb");
+	}
+	fread(dutyDiagram,sizeof(dutyDiagram),1,timetable);
+	while(fread(input,sizeof(char)*20,1,lea)!= NULL){
+		if(feof(lea)!=0) break;
+		if(noOfLeaveRequests == 0) leaveRequest = (char**)malloc(sizeof(char*));
+		else leaveRequest = realloc(leaveRequest,(noOfLeaveRequests+1)*sizeof(char*));
+		leaveRequest[noOfLeaveRequests] = input;
+		input = (char*) malloc(sizeof(char)*20);
+		noOfLeaveRequests++;
+	}
+	while(fread(input,sizeof(char)*20,1,over)!= NULL){
+		if(feof(over)!=0) break;
+		if(noOfOverDutyRequests == 0) overDutyRequest = (char**)malloc(sizeof(char*));
+		else overDutyRequest = realloc(overDutyRequest,(noOfOverDutyRequests+1)*sizeof(char*));
+		overDutyRequest[noOfOverDutyRequests] = input;
+		input = (char*) malloc(sizeof(char)*20);
+		noOfOverDutyRequests++;
+	}
+	while(fread(&user,sizeof(userData),1,ptr)!=NULL){
+		if(feof(ptr)!=0)
+    		break;
+    	if(dataBaseSize == 0) database = (userData*) malloc(sizeof(userData));
+		else database = realloc(database,(dataBaseSize+1)*sizeof(userData));
+		database[dataBaseSize] = user;
+		dataBaseSize++;
+	}
+	fclose(ptr);
+	fclose(lea);
+	fclose(over);
+	fclose(timetable);
+	// system("sleep 3");
+	return;
+}
+
+void destructor(){
+	return;
+}
 
 void run(){
 	int option;
-	
-	userData user;
-	dataBaseSize = 1;
-	
-	database = (userData*) malloc(sizeof(userData));
-	user.name = Admin;
-	user.identityNumber = "ADMIN";
-	user.password = AdminPassword;
-	database[0] = user;
 	while(1){
 		system("clear");
 		printf("Welcome Sir!\n");
@@ -88,6 +143,7 @@ void run(){
 				break;	
 			case 4 :
 				system("clear");
+				destructor();
 				exit(0);			
 			default :
 				printf("Invalid Input,Please try again!\n");
@@ -98,6 +154,8 @@ void run(){
 }
 
 int main(){
+	// createAdmin();
+	load();
 	run();	
 	return 0;
 }
@@ -106,6 +164,10 @@ int main(){
 
 void guardRegister(){
 	userData user;
+	
+	FILE* data;
+	data = fopen("data.bin","ab");
+	
 	init(&user);
 	int b;
 	system("clear");
@@ -116,6 +178,9 @@ void guardRegister(){
 	database[dataBaseSize] = user;
 	dataBaseSize++;
 	printf("User Registered Succesfully!\n");
+	
+	fwrite(&database[dataBaseSize-1],sizeof(userData),1,data);
+	fclose(data);
 	printf("\nPress 1 to return to Previous Page\n");
 	while(1){
 		scanf("%d",&b);
@@ -170,6 +235,7 @@ int guardInnerPage(int a,userData* user){
 	int b,i,j,k;
 	char* leaveDate = (char*)malloc(sizeof(char)*20);
 	char* encryptedDate = (char*)malloc(sizeof(char)*20);
+	FILE* ptr = fopen("leaves.bin","ab");
 	while(1){
 		system("clear");
 		switch(a){
@@ -192,7 +258,13 @@ int guardInnerPage(int a,userData* user){
 						printf("Enter the Day Number(D),startTime(SS),LocationID in D:SS:LLL\n");
 						scanf(" %s",leaveDate);
 						leaveDate = strcat(leaveDate,user->name);
-						printf("%s",leaveDate);
+						for(int i = 0; i < noOfLeaveRequests; i++){
+							if(strcmp(leaveDate,leaveRequest[i]) == 0) {
+								printf("Already Applied for this leave slot. Wait for Admin Reply.\n");
+								system("sleep 1");
+								return 1;
+							}
+						}
 						if(noOfLeaveRequests == 0){
 							leaveRequest = (char**)(malloc(sizeof(char*)));
 							noOfLeaveRequests++;
@@ -203,6 +275,8 @@ int guardInnerPage(int a,userData* user){
 							leaveRequest[noOfLeaveRequests] = leaveDate;
 							noOfLeaveRequests++;
 						}
+						fwrite(leaveDate,sizeof(char)*20,1,ptr);
+						fclose(ptr);
 						printf("Applied For Leave!\n");
 						system("sleep 1");
 						system("clear");
@@ -274,6 +348,18 @@ int guardInnerPage(int a,userData* user){
 
 //----------------------------//
 
+void createAdmin(){
+	FILE* fp;
+	userData user;
+	strcpy(user.name ,Admin);
+	strcpy(user.identityNumber ,"ADMIN");
+	strcpy(user.password , AdminPassword);
+	fp = fopen("data.bin","wb");
+	fwrite(&user,sizeof(userData),1,fp);
+	fclose(fp);
+	return;
+}
+
 int adminPage(){
 	int a;
 	while(1){
@@ -326,7 +412,7 @@ int adminInnerPage(int a){
 						Location = (leaveRequest[b][5]-'0')*100+(leaveRequest[b][6]-'0')*10+(leaveRequest[b][7]-'0');
 						system("clear");
 						if(noOfOverDutyRequests != 0){
-							dutyDiagram[wDay][sTime][Location] = overDutyRequest[0];
+							strcpy(dutyDiagram[wDay][sTime][Location] ,overDutyRequest[0]);
 							for(int i = 1; i < dataBaseSize; i++){
 								if(strcmp(database[i].name,overDutyRequest[b])==0){
 									database[i].onOverDuty = 1;
@@ -347,7 +433,7 @@ int adminInnerPage(int a){
 								}
 							}
 							scanf("%d",&d);
-							dutyDiagram[wDay][sTime][Location] = database[d].name;
+							strcpy(dutyDiagram[wDay][sTime][Location] , database[d].name);
 						}
 						for(int i = 1; i < dataBaseSize; i++){
 							if(strcmp(database[i].name,leaveRequest[b]+8)==0){
@@ -470,7 +556,7 @@ void generateSchedule(){
 		for(j = 0; j < 3; j++){
 			for(k = 0; k < NOOFPLACES; k++){
 				if(count == dataBaseSize-1) count = 0;
-				dutyDiagram[i][j][k] = database[count+1].name;
+				strcpy(dutyDiagram[i][j][k] ,database[count+1].name);
 				count++;
 			}
 		}
@@ -480,9 +566,6 @@ void generateSchedule(){
 //----------------------------//
 
 void init(userData* user){
-	user->name = (char*)malloc(20*sizeof(char));		
-	user->identityNumber = (char*)malloc(20*sizeof(char));
-	user->password = (char*)malloc(20*sizeof(char));
 	user->onLeave = 0;
 	user->onOverDuty = 0;
 	user->noOfLeaves = 0;
