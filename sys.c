@@ -84,7 +84,7 @@ void load(){
 		timetable = fopen("schedule.bin","rb");
 	}
 	fread(dutyDiagram,sizeof(dutyDiagram),1,timetable);
-	while(fread(input,sizeof(char)*20,1,lea)!= NULL){
+	while(fread(input,sizeof(char)*20,1,lea)){
 		if(feof(lea)!=0) break;
 		if(noOfLeaveRequests == 0) leaveRequest = (char**)malloc(sizeof(char*));
 		else leaveRequest = realloc(leaveRequest,(noOfLeaveRequests+1)*sizeof(char*));
@@ -92,7 +92,7 @@ void load(){
 		input = (char*) malloc(sizeof(char)*20);
 		noOfLeaveRequests++;
 	}
-	while(fread(input,sizeof(char)*20,1,over)!= NULL){
+	while(fread(input,sizeof(char)*20,1,over)){
 		if(feof(over)!=0) break;
 		if(noOfOverDutyRequests == 0) overDutyRequest = (char**)malloc(sizeof(char*));
 		else overDutyRequest = realloc(overDutyRequest,(noOfOverDutyRequests+1)*sizeof(char*));
@@ -100,7 +100,7 @@ void load(){
 		input = (char*) malloc(sizeof(char)*20);
 		noOfOverDutyRequests++;
 	}
-	while(fread(&user,sizeof(userData),1,ptr)!=NULL){
+	while(fread(&user,sizeof(userData),1,ptr)){
 		if(feof(ptr)!=0)
     		break;
     	if(dataBaseSize == 0) database = (userData*) malloc(sizeof(userData));
@@ -117,6 +117,29 @@ void load(){
 }
 
 void destructor(){
+	FILE* ptr;
+	FILE* ptr1;
+	FILE* ptr2;
+	int i = 0,j=0,k=0;
+	ptr = fopen("schedule.bin","wb");
+	ptr1 = fopen("leaves.bin","wb");
+	ptr2 = fopen("overduty.bin","wb");
+	for( i = 0; i < noOfLeaveRequests; i++){
+		fwrite(leaveRequest[i],sizeof(char)*20,1,ptr1);
+	}
+	for( i = 0; i < noOfOverDutyRequests; i++){
+		fwrite(overDutyRequest[i],sizeof(char)*20,1,ptr2);
+	}
+	for(i = 0; i < 7; i++){
+		for(j = 0; j < 3; j++){
+			for(k = 0; k < NOOFPLACES; k++){
+				fwrite(dutyDiagram[i][j][k],sizeof(char)*20,1,ptr);
+			}
+		}
+	}
+	fclose(ptr);
+	fclose(ptr1);
+	fclose(ptr2);
 	return;
 }
 
@@ -550,17 +573,20 @@ void adminLogin(){
 	return;
 }
 
-void generateSchedule(){
+void generateSchedule(){	
+	FILE* ptr = fopen("schedule.bin","wb");
 	int count = 0,i,j,k;
 	for(i = 0; i < 7; i++){
 		for(j = 0; j < 3; j++){
 			for(k = 0; k < NOOFPLACES; k++){
 				if(count == dataBaseSize-1) count = 0;
 				strcpy(dutyDiagram[i][j][k] ,database[count+1].name);
+				fwrite(dutyDiagram[i][j][k],sizeof(char)*20,1,ptr);
 				count++;
 			}
 		}
 	}
+	fclose(ptr);
 	return;
 }
 //----------------------------//
