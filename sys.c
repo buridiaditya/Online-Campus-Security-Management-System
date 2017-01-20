@@ -120,7 +120,9 @@ void destructor(){
 	FILE* ptr;
 	FILE* ptr1;
 	FILE* ptr2;
+	FILE* ptr3;
 	int i = 0,j=0,k=0;
+	ptr3 = fopen("data.bin","wb");
 	ptr = fopen("schedule.bin","wb");
 	ptr1 = fopen("leaves.bin","wb");
 	ptr2 = fopen("overduty.bin","wb");
@@ -137,6 +139,10 @@ void destructor(){
 			}
 		}
 	}
+	for(i = 0; i < dataBaseSize; i++){
+		fwrite(&database[i],sizeof(userData),1,ptr3);
+	}
+	fclose(ptr3);
 	fclose(ptr);
 	fclose(ptr1);
 	fclose(ptr2);
@@ -258,7 +264,7 @@ int guardInnerPage(int a,userData* user){
 	int b,i,j,k;
 	char* leaveDate = (char*)malloc(sizeof(char)*20);
 	char* encryptedDate = (char*)malloc(sizeof(char)*20);
-	FILE* ptr = fopen("leaves.bin","ab");
+	FILE* ptr ;
 	while(1){
 		system("clear");
 		switch(a){
@@ -298,6 +304,7 @@ int guardInnerPage(int a,userData* user){
 							leaveRequest[noOfLeaveRequests] = leaveDate;
 							noOfLeaveRequests++;
 						}
+						fopen("leaves.bin","ab");
 						fwrite(leaveDate,sizeof(char)*20,1,ptr);
 						fclose(ptr);
 						printf("Applied For Leave!\n");
